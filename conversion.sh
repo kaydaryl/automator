@@ -11,55 +11,77 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# What is this even doing? Nothing in this script is writing to tmplist, so add
-# a comment to explain what's going on. I presume it's the python process
-# writing to it?
-rm tmplist
-touch tmplist
-chmod 777 tmplist
-
-# 
 currentmovie=0
 mp4convertinstance=0
 
 # By making a function, you can get the current count at any time, rather than
 # having to re-run the same command. Same function, less typing.
-getCount() {
-  find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" | wc -l
+function getCount() {
+  counter=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" | wc -l)
 }
 
 # Moving the random movie stuff up here as well.
 getRandom() {
-  find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" |
-    shuf -n 1 -e -
+  randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" | shuf -n 1)
 }
 
-counter=getCount
+getFilesworked() {
+    filesworked=$(more /tmp/tmplist | wc -l)
+}
 
+getThreads() {
+    threads=$(ps ax | grep "sudo python" | grep "sickbeardmp4automator" | wc -l)
+}
+
+getCurrentthread() {
+    getThreads
+    printf "Threads: $threads of $nproc \n"
+}
+
+#if I don't touch tmplist, it is not initialized. Removing @ beginning script ensures clean run
+rm -f /tmp/tmplist
+touch /tmp/tmplist
+
+getCount
+getRandom
+getFilesworked
+getThreads
+nproc=$(nproc)
+countertotal=$counter
 # Converting to printf 
-printf "\nNumber of files to process: %50s\n" "$counter"
+printf "\nNumber of files to process: %10s\n" "$counter"
 
 # Using function above
-while [ getCount > 0 ]; do
+while [ $counter > 0 ]; do
   # I'd convert this to a function, using pgrep.
-	threads=$(ps ax | grep "sudo python" | grep "sickbeardmp4automator" | wc -l)
-	filesworkedon=$(more tmplist | wc -l)
-	if [ $threads > 12 ]; then
-	  echo "Waiting for a few files to finish!"
-	  while [[ ( $threads > 8 ) ]]; do
-		  echo "process max loop:"
-		  echo $threads
-		  sleep 5
-	  done
+	getFilesworked
+	getRandom
+	getThreads
+	#Confused with below IF statement. $threads is 3, so why would it return the following as true?
+	#if [[ $threads > 12 ]]; then
+	#    echo "CPU maxed, wating to start more"
+	#    while [[ ( $threads > 8 ) ]]; do
+	#	sleep 5
+	#	getThreads
+	#    done
+	#fi
+	if [[ "$filesworked" == "$countertotal" ]]; then
+	    echo "Final files started"
+	    while [ $threads > 0 ]; do
+		getThreads
+		printf "\nFiles left: $counter"
+		sleep 10
+	    done  
 	fi
-	currentmovie=getRandom
-	if ! grep -Fxq "$(basename $currentmovie)" tmplist ; then
+	currentmovie=$randomfile
+	if ! grep -Fxq "$(basename $currentmovie)" /tmp/tmplist ; then
+	    filesworkedon=$(more /tmp/tmplist | wc -l)
 	    echo "Found a new file to edit!"
 	    echo "Setting up:		$(basename $currentmovie)"
-	    echo $(basename $currentmovie) >> tmplist
+	    echo $(basename $currentmovie) >> /tmp/tmplist
 	    sudo python /RAID/sickbeardmp4automator/manual.py -i "$currentmovie" -a &> /dev/null &
 	    sleep 1
 	fi
-	echo "test"
+	getCount
 done
 echo "Re-encoding is done!"
