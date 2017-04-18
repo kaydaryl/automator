@@ -16,13 +16,13 @@ mp4convertinstance=0
 
 # By making a function, you can get the current count at any time, rather than
 # having to re-run the same command. Same function, less typing.
-function getCount() {
-  counter=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" | wc -l)
+getCount() {
+    counter=$(find /RAID/tmpvideoreencode/ -name "*.avi" , -name "*.mkv" , -name "*.mp4" , -name "*.m4v" | wc -l)
 }
 
 # Moving the random movie stuff up here as well.
 getRandom() {
-  randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" | shuf -n 1)
+    randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" , -name "*.mkv" , -name "*.mp4" , -name "*.m4v" | shuf -n 1)
 }
 
 getFilesworked() {
@@ -57,31 +57,38 @@ while [ $counter > 0 ]; do
 	getFilesworked
 	getRandom
 	getThreads
-	#Confused with below IF statement. $threads is 3, so why would it return the following as true?
-	#if [[ $threads > 12 ]]; then
-	#    echo "CPU maxed, wating to start more"
-	#    while [[ ( $threads > 8 ) ]]; do
-	#	sleep 5
-	#	getThreads
-	#    done
-	#fi
+	getCount
+	echo $threads
+	if [[ $counter == 0 ]]; then
+	    break
+	fi
+	if [[ $threads > $nproc ]]; then
+	    echo "CPU maxed, wating to start more"
+	    echo "Max Threads: $nproc"
+	    while [[ ( $threads > $nproc ) ]]; do
+		sleep 5
+		getThreads
+	    done
+	fi
 	if [[ "$filesworked" == "$countertotal" ]]; then
 	    echo "Final files started"
 	    while [ $threads > 0 ]; do
 		getThreads
-		printf "\nFiles left: $counter"
+		printf "\nFiles left: $threads"
+		if [ $threads == 0 ]; then
+		    break
+		fi
 		sleep 10
 	    done  
 	fi
-	currentmovie=$randomfile
-	if ! grep -Fxq "$(basename $currentmovie)" /tmp/tmplist ; then
+	if ! grep -Fxq "$(basename "$randomfile")" /tmp/tmplist ; then
 	    filesworkedon=$(more /tmp/tmplist | wc -l)
 	    echo "Found a new file to edit!"
-	    echo "Setting up:		$(basename $currentmovie)"
-	    echo $(basename $currentmovie) >> /tmp/tmplist
-	    sudo python /RAID/sickbeardmp4automator/manual.py -i "$currentmovie" -a &> /dev/null &
+	    echo "Setting up:		$(basename "$randomfile")"
+	    echo $(basename "$randomfile") >> /tmp/tmplist
+	    sudo nice -19 python /RAID/sickbeardmp4automator/all.py -i "$randomfile" -a &> /dev/null &
 	    sleep 1
 	fi
 	getCount
 done
-echo "Re-encoding is done!"
+printf "\nRe-encoding is done!\n"
