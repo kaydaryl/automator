@@ -16,13 +16,17 @@ mp4convertinstance=0
 
 # By making a function, you can get the current count at any time, rather than
 # having to re-run the same command. Same function, less typing.
+getCPU() {
+    cpuUsage=$(top -bn 1 | awk '{print $9}' | tail -n +8 | awk '{s+=$1} END {print s}')
+}
+
 getCount() {
-    counter=$(find /RAID/tmpvideoreencode/ -name "*.avi" , -name "*.mkv" , -name "*.mp4" , -name "*.m4v" | wc -l)
+    counter=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" -o -name "*.mp4" | wc -l)
 }
 
 # Moving the random movie stuff up here as well.
 getRandom() {
-    randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" , -name "*.mkv" , -name "*.mp4" , -name "*.m4v" | shuf -n 1)
+    randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" -o -name "*.mp4" | shuf -n 1)
 }
 
 getFilesworked() {
@@ -30,7 +34,7 @@ getFilesworked() {
 }
 
 getThreads() {
-    threads=$(ps ax | grep "sudo python" | grep "sickbeardmp4automator" | wc -l)
+    threads=$(ps ax | grep "sudo python*" | grep "sickbeardmp4automator" | wc -l)
 }
 
 getCurrentthread() {
@@ -46,6 +50,7 @@ getCount
 getRandom
 getFilesworked
 getThreads
+getCPU
 nproc=$(nproc)
 countertotal=$counter
 # Converting to printf 
@@ -58,16 +63,15 @@ while [ $counter > 0 ]; do
 	getRandom
 	getThreads
 	getCount
-	echo $threads
+	getCPU
 	if [[ $counter == 0 ]]; then
 	    break
 	fi
-	if [[ $threads > $nproc ]]; then
+	if [[ $cpuUsage > $(($nproc * 85)) ]]; then
 	    echo "CPU maxed, wating to start more"
-	    echo "Max Threads: $nproc"
-	    while [[ ( $threads > $nproc ) ]]; do
+	    while [[ $cpuUsage > $(($nproc * 85)) ]]; do
 		sleep 5
-		getThreads
+		getCPU
 	    done
 	fi
 	if [[ "$filesworked" == "$countertotal" ]]; then
@@ -75,8 +79,9 @@ while [ $counter > 0 ]; do
 	    while [ $threads > 0 ]; do
 		getThreads
 		printf "\nFiles left: $threads"
-		if [ $threads == 0 ]; then
-		    break
+		if [[ $threads == 0 ]]; then
+		    printf "\nRe-encoding is done!\n"
+		    exit
 		fi
 		sleep 10
 	    done  
@@ -87,7 +92,7 @@ while [ $counter > 0 ]; do
 	    echo "Setting up:		$(basename "$randomfile")"
 	    echo $(basename "$randomfile") >> /tmp/tmplist
 	    sudo nice -19 python /RAID/sickbeardmp4automator/all.py -i "$randomfile" -a &> /dev/null &
-	    sleep 1
+	    sleep 5
 	fi
 	getCount
 done
