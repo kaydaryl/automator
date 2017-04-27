@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 1. Sequential reencoding
+# 2. 
+# 3. 
+# 4. 
 # General bash practice: Exits the script if any command along the way fails.
 set -e
 
@@ -25,6 +29,7 @@ getCount() {
 }
 
 # Moving the random movie stuff up here as well.
+# Eventually will want it sequential so that i can better lost how many are left
 getRandom() {
     randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" -o -name "*.mp4" | shuf -n 1)
 }
@@ -34,7 +39,7 @@ getFilesworked() {
 }
 
 getThreads() {
-    threads=$(ps ax | grep "sudo python*" | grep "sickbeardmp4automator" | wc -l)
+    threads=$(pgrep ffmpeg | wc -l)
 }
 
 getCurrentthread() {
@@ -42,6 +47,28 @@ getCurrentthread() {
     printf "Threads: $threads of $nproc \n"
 }
 
+startEndgame() {
+    echo "Final files started"
+    while [ $threads > 0 ]; do
+	#this breaks once all atarted but not done yet
+	getThreads
+	#add function to only print if change
+	printf "\nFiles left: $threads"
+	if [[ $threads == 0 ]]; then
+	    printf "\nRe-encoding is done!\n"
+	    exit
+	fi
+	sleep 10
+	done  
+}
+
+cpuIdle() { 
+    echo "CPU maxed, wating to start more"
+    while [[ $cpuUsage > $(($nproc * 85)) ]]; do
+	sleep 5
+	getCPU
+    done
+}
 #if I don't touch tmplist, it is not initialized. Removing @ beginning script ensures clean run
 rm -f /tmp/tmplist
 touch /tmp/tmplist
@@ -64,34 +91,18 @@ while [ $counter > 0 ]; do
 	getThreads
 	getCount
 	getCPU
-	if [[ $counter == 0 ]]; then
-	    break
-	fi
 	if [[ $cpuUsage > $(($nproc * 85)) ]]; then
-	    echo "CPU maxed, wating to start more"
-	    while [[ $cpuUsage > $(($nproc * 85)) ]]; do
-		sleep 5
-		getCPU
-	    done
+	    cpuIdle
 	fi
 	if [[ "$filesworked" == "$countertotal" ]]; then
-	    echo "Final files started"
-	    while [ $threads > 0 ]; do
-		getThreads
-		printf "\nFiles left: $threads"
-		if [[ $threads == 0 ]]; then
-		    printf "\nRe-encoding is done!\n"
-		    exit
-		fi
-		sleep 10
-	    done  
+	    startEndgame
 	fi
 	if ! grep -Fxq "$(basename "$randomfile")" /tmp/tmplist ; then
 	    filesworkedon=$(more /tmp/tmplist | wc -l)
 	    echo "Found a new file to edit!"
 	    echo "Setting up:		$(basename "$randomfile")"
 	    echo $(basename "$randomfile") >> /tmp/tmplist
-	    sudo nice -19 python /RAID/sickbeardmp4automator/all.py -i "$randomfile" -a &> /dev/null &
+	    nice -19 python /RAID/sickbeardmp4automator/all.py -i "$randomfile" -a &> /dev/null &
 	    sleep 5
 	fi
 	getCount
