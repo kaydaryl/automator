@@ -30,16 +30,16 @@ getCount() {
 
 # Moving the random movie stuff up here as well.
 # Eventually will want it sequential so that i can better lost how many are left
-getRandom() {
-    randomfile=$(find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" -o -name "*.mp4" | shuf -n 1)
+getList() {
+    find /RAID/tmpvideoreencode/ -name "*.avi" -o -name "*.mkv" -o -name "*.mp4" >> /tmp/tmplist
 }
 
 getFilesworked() {
-    filesworked=$(more /tmp/tmplist | wc -l)
+    filesworked=$(more /tmp/tmplist2 | wc -l)
 }
 
 getThreads() {
-    threads=$(pgrep ffmpeg | wc -l)
+    threads=$(pgrep python | wc -l)
 }
 
 getCurrentthread() {
@@ -50,7 +50,6 @@ getCurrentthread() {
 startEndgame() {
     echo "Final files started"
     while [ $threads > 0 ]; do
-	#this breaks once all atarted but not done yet
 	getThreads
 	#add function to only print if change
 	printf "\nFiles left: $threads"
@@ -70,24 +69,20 @@ cpuIdle() {
     done
 }
 #if I don't touch tmplist, it is not initialized. Removing @ beginning script ensures clean run
-rm -f /tmp/tmplist
-touch /tmp/tmplist
+rm -f /tmp/tmplist /tmp/tmplist2
+touch /tmp/tmplist /tmp/tmplist2
 
 getCount
-getRandom
+getList
 getFilesworked
 getThreads
 getCPU
 nproc=$(nproc)
 countertotal=$counter
-# Converting to printf 
 printf "\nNumber of files to process: %10s\n" "$counter"
 
-# Using function above
 while [ $counter > 0 ]; do
-  # I'd convert this to a function, using pgrep.
 	getFilesworked
-	getRandom
 	getThreads
 	getCount
 	getCPU
@@ -97,14 +92,12 @@ while [ $counter > 0 ]; do
 	if [[ "$filesworked" == "$countertotal" ]]; then
 	    startEndgame
 	fi
-	if ! grep -Fxq "$(basename "$randomfile")" /tmp/tmplist ; then
-	    filesworkedon=$(more /tmp/tmplist | wc -l)
-	    echo "Found a new file to edit!"
-	    echo "Setting up:		$(basename "$randomfile")"
-	    echo $(basename "$randomfile") >> /tmp/tmplist
-	    nice -19 python /RAID/sickbeardmp4automator/all.py -i "$randomfile" -a &> /dev/null &
+	while IFS='' read -r line || [[ -n "$line" ]]; do
+	    echo $line
+	    echo "Setting up:		$(basename "$line")"
+	    nice -19 python /RAID/sickbeardmp4automator/all.py -i "$line" -a &> /dev/null &
+	    echo $line >> /tmp/tmplist2
 	    sleep 5
-	fi
-	getCount
+	done < /tmp/tmplist
 done
 printf "\nRe-encoding is done!\n"
