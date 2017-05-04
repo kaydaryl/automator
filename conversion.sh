@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 1. Sequential reencoding
+# 1. Label process as first pass, second pass is for mkvs that failed
 # 2. 
 # 3. 
 # 4. 
