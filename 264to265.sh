@@ -26,13 +26,14 @@ while read line; do
 	origfilesize=$(du -k "$line" | cut -f1)
 	threshold=$(($origfilesize * 4 / 5))
 	#if newfilesize > threshold && newfilesize > 0 && $? ==0
-	if [[ $? == 0 ]]; then
+	if [[ "$?" == "0" ]]; then
 	    if [[ $newfilesize < $threshold && $newfilesize > 0 ]]; then
 		mv /RAID/tmpoutput.mp4 "$line"
 	    else
 		echo "$line" >> /RAID/filesleftas264.log
 	    fi
 	else
+	    echo "$(basename "$line") failed"
 	    echo "$lines" >> /RAID/filesthatfailed.log
 	fi
 	echo ""
