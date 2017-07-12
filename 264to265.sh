@@ -26,12 +26,9 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 	if [[ "$?" == "0" ]]; then
 	    echo "Moving: $basename"$line""
 	    #mv "$folderToParse/.tmpoutput.mp4" "$line"
-        else
-            $line >> /RAID/filesthatfailed.log
-	    echo "$(basename "$line") failed"
 	fi
     fi
 done < "$folderToParse/.filestoconvert.log"
 
-rm -f "$folderToParse/.filestoconvert.log" "$folderToParse/.tmpoutput.mp4"
+#rm -f "$folderToParse/.filestoconvert.log" "$folderToParse/.tmpoutput.mp4"
 
