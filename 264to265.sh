@@ -19,16 +19,17 @@ rm -f "$folderToParse/.tmpoutput.mp4" "$folderToParse/.filestoconvert.log"
 
 find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" >> "$folderToParse/.filestoconvert.log"
 
-while IFS='' read -r line || [[ -n "$line" ]]; do
-    if [[ $(mediainfo "$line" | grep "HEVC" | wc -l) < 1 ]]; then
-	echo "Transcoding: $basename"$line""
-	ffmpeg -y -i "$line" -movflags faststart -c:a aac -c:v libx265 -preset medium -crf 19 -t 1 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1
+IFS=$'\n'
+for i in $(cat "$folderToParse/.filestoconvert.log"); do
+    if [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
+	echo "Transcoding: $basename"$i""
+	ffmpeg -y -i "$i" -movflags faststart -c:a aac -c:v libx265 -preset medium -crf 19 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1
 	if [[ "$?" == "0" ]]; then
-	    echo "Moving: $basename"$line""
-	    #mv "$folderToParse/.tmpoutput.mp4" "$line"
+	    echo "Moving: $basename"$i""
+	    #mv "$folderToParse/.tmpoutput.mp4" "$i"
 	fi
     fi
-done < "$folderToParse/.filestoconvert.log"
+done
 
-#rm -f "$folderToParse/.filestoconvert.log" "$folderToParse/.tmpoutput.mp4"
+rm -f "$folderToParse/.filestoconvert.log" "$folderToParse/.tmpoutput.mp4"
 
