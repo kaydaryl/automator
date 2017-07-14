@@ -17,7 +17,7 @@ echo "Looking for files in: $folderToParse"
 touch /RAID/filesthatfailed.log "$folderToParse/.filestoconvert.log"
 rm -f "$folderToParse/.tmpoutput.mp4" "$folderToParse/.filestoconvert.log"
 
-find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" >> "$folderToParse/.filestoconvert.log"
+find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" | sort >> "$folderToParse/.filestoconvert.log"
 
 IFS=$'\n'
 for i in $(cat "$folderToParse/.filestoconvert.log"); do
