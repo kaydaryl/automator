@@ -31,15 +31,15 @@ echo "Total Files to be processed: $counter"
 
 for i in $(cat "$folderToParse/.264files.log"); do
     if [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
-    echo "Transcoding: $(basename "$i")"
-    sudo nice -n 19 ffmpeg -y -i "$i" -movflags faststart -c:a aac -c:v libx265 -preset medium -crf 19 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1
-    if [[ "$?" == "0" ]]; then
-	NEWNAME="${i%.*}.mp4"
-	echo "Moving: $(basename "$i") to $(basename "$NEWNAME")"
-	mv "$folderToParse/.tmpoutput.mp4" "$i"
-        mv "$i" "$NEWNAME"
+    	echo "Transcoding: $(basename "$i")"
+	sudo nice -n 19 ffmpeg -y -i "$i" -movflags faststart -c:a aac -c:v libx265 -preset medium -crf 19 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1
+    	if [[ "$?" == "0" ]]; then
+	    mv "$folderToParse/.tmpoutput.mp4" "$i"
+	    if [[ "$i" != *.mp4 ]]; then
+	        mv "$i" "${i%.*}.mp4"
+            fi
 	counter=$((counter - 1))
-    fi
+    	fi
     echo ""
     echo ""
     fi
