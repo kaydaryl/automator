@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+function CLEANUP {
+   find "$folderToParse" -name ".tmpoutput.mp4" -o -name ".264files.log" -o -name ".filestoconvert.log" | while read fname; do rm "$fname"; done
+}
+
+
 set -e
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
@@ -14,7 +20,7 @@ else
 fi
 echo "Looking for files in: $folderToParse"
 
-rm -f "$folderToParse/.filestoconvert.log" "$folderToParse/.tmpoutput.mp4" "$folderToParse/.264files.log"
+CLEANUP
 
 counter=0
 find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort >> "$folderToParse/.filestoconvert.log"
@@ -22,10 +28,14 @@ find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -ina
 IFS=$'\n'
 for i in $(cat "$folderToParse/.filestoconvert.log"); do
     if [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
-    echo "$i" >> "$folderToParse/.264files.log"
-    counter=$((counter + 1))
+       echo "$i" >> "$folderToParse/.264files.log"
+       counter=$((counter + 1))
     fi
 done
+if [[ $counter == 0 ]]; then
+    echo "This folder is all x265!"
+    exit 0
+fi
 
 echo "Total Files to be processed: $counter"
 
@@ -46,6 +56,6 @@ for i in $(cat "$folderToParse/.264files.log"); do
     echo "Files left to process: $counter"
 done
 
-rm -f "$folderToParse/.filestoconvert.log" "$folderToParse/.tmpoutput.mp4" "$folderToParse/.264files.log"
+CLEANUP
 
 echo "Happy streaming!"
