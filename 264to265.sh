@@ -5,7 +5,6 @@ function CLEANUP {
    find "$folderToParse" -name ".tmpoutput.mp4" -o -name ".264files.log" -o -name ".filestoconvert.log" | while read fname; do rm "$fname"; done
 }
 
-
 set -e
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
