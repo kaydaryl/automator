@@ -12,7 +12,7 @@ if [[ $1 != "" ]]; then
 else
     folderToParse="$PWD"
 fi
-echo "Looking for files in: $folderToParse"
+echo -e "Looking for files in: $folderToParse\n"
 
 
 counterfive=0
@@ -32,9 +32,8 @@ find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -ina
         fi
     fi
     let RUNTOT=counterfive+counterfour
-    if [[ $TOTAL == $RUNTOT ]]; then
-	let PERCENTLEFT=$(($counterfour / $TOTAL))*100
-	echo -e "\n$PERCENTLEFT% of $TOTAL files left\n"
-    fi
+    PERCENTLEFT=$(echo "scale = 2;$counterfour / $TOTAL * 100" | bc -l)
+    echo -ne "\e[0K\rChecked: $RUNTOT of $TOTAL\t\t264: $counterfour\t\t265: $counterfive\t\tUnprocessed: $PERCENTLEFT%"
 done
 
+echo ""
