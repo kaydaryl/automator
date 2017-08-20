@@ -33,7 +33,7 @@ find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -ina
     fi
     let RUNTOT=counterfive+counterfour
     PERCENTLEFT=$(echo "scale = 2;$counterfour / $TOTAL * 100" | bc -l)
-    echo -ne "\e[0K\rChecked: $RUNTOT of $TOTAL\t\t264: $counterfour\t\t265: $counterfive\t\tUnprocessed: $PERCENTLEFT%"
+    echo -ne "\e[0K\rChecked: $RUNTOT of $TOTAL\t264: $counterfour\t\t265: $counterfive\t\tUnprocessed: $PERCENTLEFT%"
 done
 
 echo ""
