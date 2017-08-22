@@ -51,7 +51,7 @@ for i in $(find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.a
     	COUNTER=$((COUNTER - 1))
     fi
     if [[ $TEMPCOUNTER != $COUNTER ]]; then
-	echo -e "${green}Files left to process: $COUNTER${reset}"
+	echo -e "\t${green}Files left to process: $COUNTER${reset}"
     fi
 done
 
