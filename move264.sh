@@ -17,7 +17,7 @@ fi
 if [[ $2 != "" ]]; then
     COPYFOLDER="$2"
 else
-    echo "Arg 2 needs to be the source folder"
+    echo "Arg 2 needs to be the destination folder"
     exit 1
 fi
 
@@ -43,7 +43,7 @@ SETSTATS () {
 TOTAL=0
 #COPYFOLDER="/mnt/Daryl/264files/Movies/"
 IFS=$'\n'
-find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n | while read fname; do
+find "$folderToParse" -maxdepth 1 -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n | while read fname; do
     SETSTATS "$fname"
     echo -e "Free space left:\t$SPACELEFT KB"
     if [[ $FILESIZE -lt $SPACELEFT ]] && [[ $(ls "$COPYFOLDER" | grep "$FILENAME" | wc -l) -eq 0 ]]; then

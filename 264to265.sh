@@ -6,8 +6,18 @@ function HOWMANY {
 
 set -e
 if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root"
-  exit 1
+    echo "Please run as root"
+    exit 1
+fi
+
+if ! [ -x "$(command -v mediainfo)" ]; then
+    echo "Installing mediainfo"
+    apt-get install -y mediainfo -qq
+fi
+
+if ! [ -x "$(command -v ffmpeg)" ]; then
+    echo "Installing ffmpeg"
+    apt-get install -y ffmpeg -qq
 fi
 
 if [[ $1 != "" ]]; then
@@ -15,7 +25,6 @@ if [[ $1 != "" ]]; then
 else
     folderToParse="$PWD"
 fi
-echo "Looking for files in: $folderToParse"
 
 
 red=`tput setaf 1`
@@ -31,7 +40,7 @@ else
     HOWMANY
 fi
 
-
+echo "Looking for files in: $folderToParse"
 for i in $(find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n); do
     TEMPCOUNTER=$COUNTER
     if [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
