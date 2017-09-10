@@ -43,6 +43,7 @@ fi
 echo "Looking for files in: $folderToParse"
 for i in $(find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n); do
     TEMPCOUNTER=$COUNTER
+    TEMPCHECK=0
     if [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
     	echo -e "${yellow}Transcoding: $(basename "$i")${reset}"
     	sudo nice -n 19 ffmpeg -y -i "$i" -xerror -movflags faststart -c:a aac -c:v libx265 -preset medium -crf 19 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1
@@ -57,9 +58,10 @@ for i in $(find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.a
 	    rm -r "$folderToParse/.tmpoutput.mp4"
 	    tput cuu 1 && tput el && echo -ne "${red}Transcoding: $(basename "$i"):\tFAILED${reset}"
     	fi
-    	COUNTER=$((COUNTER - 1))
+	let TEMPCHECK=1
     fi
-    if [[ $TEMPCOUNTER != $COUNTER ]]; then
+    COUNTER=$((COUNTER - 1))
+    if [[ $TEMPCOUNTER != $COUNTER ]] && [[ $TEMPCHECK == 1 ]]; then
 	echo -e "\t${green}Files left to process: $COUNTER${reset}"
     fi
 done
