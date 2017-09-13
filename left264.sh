@@ -44,7 +44,7 @@ find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -ina
     if [[ $RUNTOT == $TOTAL ]]; then
 	PERCENTSIZELEFT=$(echo "scale = 2;$TOTSIZEFOUR / $TOTSIZE * 100" | bc -l)
 	GBLEFT=$(echo "scale = 0;$TOTSIZEFOUR / 1000000000" | bc -l)
-	tput el1 && echo -ne "\e[0K\rSummary:\n" && echo -ne "\rFiles checked: $TOTAL\tFiles still x264: $PERCENTLEFT%\tBytes left x264:$PERCENTSIZELEFT%\tGB left: $GBLEFT\n"
+	tput el1 && echo -ne "\e[0K\rSummary:\n" && echo -ne "\rFiles checked: $TOTAL\tFiles still x264: $PERCENTLEFT%\tBytes left x264:$PERCENTSIZELEFT%\tGB left: $GBLEFT\n\n"
 	exit 0
     fi
 done

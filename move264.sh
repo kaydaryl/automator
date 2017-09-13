@@ -24,28 +24,23 @@ fi
 if [[ $3 != "" ]]; then
     FOLDERMAX="$3"
 else
-    FOLDERMAX=$(du -s "$COPYFOLDER" | awk '{print $1}')
+    FOLDERMAX=$(df "$COPYFOLDER" | tail -n 1 | awk '{print $4}')
 fi
 
 
 echo -e "Looking for 264 files in: $folderToParse\n"
 
 SETSTATS () {
-    FOLDERSIZE=$(du -s "$COPYFOLDER" | awk '{print $1}')
+    FOLDERSIZE=$(df "$COPYFOLDER" | tail -n 1 | awk '{print $4}')
     FILESIZE=$(du -k "$fname" | cut -f 1)
     FILENAME=$(basename "$fname")
-    let SPACELEFT=FOLDERMAX-FOLDERSIZE
-    #let SPACELEFTGB=SPACELEFT/1000000
+    SPACELEFT=$( echo "$FOLDERMAX - $FOLDERSIZE" | bc)
 }
 
-#FOLDERMAX=$(du -s "/mnt/" | awk '{print $1}')
-#FOLDERMAX=260000000
 TOTAL=0
-#COPYFOLDER="/mnt/Daryl/264files/Movies/"
 IFS=$'\n'
-find "$folderToParse" -maxdepth 1 -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n | while read fname; do
+find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n | while read fname; do
     SETSTATS "$fname"
-    echo -e "Free space left:\t$SPACELEFT KB"
     if [[ $FILESIZE -lt $SPACELEFT ]] && [[ $(ls "$COPYFOLDER" | grep "$FILENAME" | wc -l) -eq 0 ]]; then
 	if [[ $(mediainfo "$fname" | grep "HEVC" | wc -l) -lt 1 ]]; then
 	    if [[ $(basename "$fname" | cut -c 1) == "." ]]; then
@@ -53,6 +48,7 @@ find "$folderToParse" -maxdepth 1 -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.
 	    else
 		echo "$(basename "$fname") fits! Copying ..."
 		cp "$fname" "$COPYFOLDER"
+		echo -e "Free space left:\t$SPACELEFT KB"
 	    fi
 	fi
     else
