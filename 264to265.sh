@@ -43,9 +43,9 @@ fi
 echo "Looking for files in: $folderToParse"
 for i in $(find "$folderToParse" -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m4v" | sort -n); do
     TEMPCHECK=0
-    if [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
+    if [[ $(grep -rnw "$(basename "$i")" /transcodingtools/skipfiles.log | wc -l) -lt 1 ]] && [[ $(mediainfo "$i" | grep "HEVC" | wc -l) < 1 ]]; then
     	echo -e "${yellow}Transcoding: $(basename "$i")${reset}"
-    	sudo nice -n 19 ffmpeg -y -i "$i" -xerror -movflags faststart -c:a aac -c:v libx265 -preset ultrafast -crf 19 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1
+    	sudo nice -n 19 ffmpeg -y -i "$i" -xerror -movflags faststart -c:a aac -c:v libx265 -preset ultrafast -crf 19 "$folderToParse/.tmpoutput.mp4" > /dev/null 2>&1 || true
     	if [[ "$?" == "0" ]]; then
             if [[ "$i" != *.mp4 ]]; then
             	mv "$i" "${i%.*}.mp4"
